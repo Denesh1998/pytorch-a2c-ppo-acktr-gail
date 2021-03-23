@@ -3,6 +3,9 @@ import os
 import gym
 import numpy as np
 import torch
+from warehouse.warehouse import Warehouse  
+import yaml
+
 from gym.spaces.box import Box
 from gym.wrappers.clip_action import ClipAction
 from stable_baselines3.common.atari_wrappers import (ClipRewardEnv,
@@ -15,6 +18,7 @@ from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
                                               VecEnvWrapper)
 from stable_baselines3.common.vec_env.vec_normalize import \
     VecNormalize as VecNormalize_
+file_param = "/home/denesh/Acads/Q3/DL/influence-aware-memory/configs/default.yaml";
 
 try:
     import dmc2gym
@@ -31,6 +35,10 @@ try:
 except ImportError:
     pass
 
+def read_parameters(config_file):
+    with open(config_file) as file:
+        parameters = yaml.load(file, Loader=yaml.FullLoader)
+    return parameters['parameters']
 
 def make_env(env_id, seed, rank, log_dir, allow_early_resets):
     def _thunk():
@@ -38,6 +46,8 @@ def make_env(env_id, seed, rank, log_dir, allow_early_resets):
             _, domain, task = env_id.split('.')
             env = dmc2gym.make(domain_name=domain, task_name=task)
             env = ClipAction(env)
+        elif env_id=="warehouse":
+            env = Warehouse(None, read_parameters(file_param))
         else:
             env = gym.make(env_id)
 

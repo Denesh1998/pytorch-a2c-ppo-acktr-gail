@@ -1,3 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 22 21:40:05 2021
+
+@author: denesh
+"""
+
+
 import copy
 import glob
 import os
@@ -11,7 +20,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-import yaml
 
 from a2c_ppo_acktr import algo, utils
 from a2c_ppo_acktr.algo import gail
@@ -20,11 +28,10 @@ from a2c_ppo_acktr.envs import make_vec_envs
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
-from warehouse.warehouse import Warehouse
 
 def main():
     args = get_args()
-
+    args.env_name = "warehouse"
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
@@ -40,9 +47,9 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
-                         args.gamma, args.log_dir, device, False)
+    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
 
+    #envs = Warehouse(None, read_parameters(file_param))
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
@@ -95,7 +102,7 @@ def main():
                               envs.observation_space.shape, envs.action_space,
                               actor_critic.recurrent_hidden_state_size)
 
-    obs = envs.reset()
+    obs = torch.from_numpy(envs.reset())
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
