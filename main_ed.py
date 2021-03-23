@@ -14,13 +14,14 @@ import time
 from collections import deque
 
 import gym
+from gym import spaces
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
-
+from environments.vectorized_environment import VectorizedEnvironment
+import yaml
 from a2c_ppo_acktr import algo, utils
 from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.arguments import get_args
@@ -28,6 +29,11 @@ from a2c_ppo_acktr.envs import make_vec_envs
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
+def read_parameters(config_file):
+    with open(config_file) as file:
+        parameters = yaml.load(file, Loader=yaml.FullLoader)
+    return parameters['parameters']
+file_param = "/home/denesh/Acads/Q3/DL/influence-aware-memory/configs/default.yaml";
 
 def main():
     args = get_args()
@@ -48,7 +54,8 @@ def main():
     device = torch.device("cuda:0" if args.cuda else "cpu")
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
-
+    seed = 0
+    #envs = VectorizedEnvironment(read_parameters(file_param),seed)
     #envs = Warehouse(None, read_parameters(file_param))
     actor_critic = Policy(
         envs.observation_space.shape,

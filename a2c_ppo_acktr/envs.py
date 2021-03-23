@@ -1,10 +1,14 @@
 import os
-
+from environments.worker import Worker
+import multiprocessing as mp
+import numpy as np
+import random
 import gym
 import numpy as np
 import torch
-from warehouse.warehouse import Warehouse  
+from environments.warehouse.warehouse import Warehouse  
 import yaml
+from environments.vectorized_environment import VectorizedEnvironment
 
 from gym.spaces.box import Box
 from gym.wrappers.clip_action import ClipAction
@@ -98,6 +102,10 @@ def make_vec_envs(env_name,
                   device,
                   allow_early_resets,
                   num_frame_stack=None):
+    
+
+    
+    
     envs = [
         make_env(env_name, seed, i, log_dir, allow_early_resets)
         for i in range(num_processes)

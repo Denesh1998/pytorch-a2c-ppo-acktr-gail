@@ -1,12 +1,13 @@
-'''
+
 from environments.warehouse.item import Item
 from environments.warehouse.robot import Robot
 from environments.warehouse.utils import *
+
 '''
-from warehouse.item import Item
-from warehouse.robot import Robot
-from warehouse.utils import *
-import torch
+from item import Item
+from robot import Robot
+from utils import *
+'''
 import numpy as np
 import copy
 import random
@@ -94,18 +95,7 @@ class Warehouse(object):
 
     @property
     def observation_space(self):
-        '''
-        observation_space = tf.placeholder(shape=[None,
-                                                    self.parameters["frame_height"],
-                                                    self.parameters["frame_width"],
-                                                    self.parameters["num_frames"]],
-                                              dtype=tf.float32, name='observation')
-        '''
-        observation_space = spaces.Box(low=0, high=255, shape=(
-                                                    self.parameters["frame_height"],
-                                                    self.parameters["frame_width"],
-                                                    self.parameters["num_frames"]))
-        return observation_space
+        return None
 
     @property
     def action_space(self):

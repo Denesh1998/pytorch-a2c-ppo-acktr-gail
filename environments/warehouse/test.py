@@ -1,5 +1,7 @@
 from warehouse import Warehouse
 import numpy as np
+from item import Item
+
 import yaml
 seed = None
 def read_parameters(config_file):
@@ -18,14 +20,18 @@ for robot in warehouse.robots:
       'place robots test: failed. Robot {} is not within its designated domain'.format(robot.id)
 print('place robots test: passed')
 ###################### Test _add_items function #######################
-item_rows = np.arange(0, warehouse.n_rows, warehouse.distance_between_shelves)
-for item in warehouse.items:
-    assert  item.get_position[0] in item_rows, \
-    'add items test: failed. Item {} is not on a shelf'.format(item.id)
+warehouse.items = [Item(0,[0,1]),Item(1,[3,4])]
 warehouse._add_items()
+
+item_rows = np.arange(0, warehouse.n_rows, warehouse.distance_between_shelves)
+print(item.get_position[0])
+#for item in warehouse.items:
+#    assert  item.get_position[0] in item_rows,\
+#    'add items test: failed. Item {} is not on a shelf'.format(item._id)
+
 print('add items test: passed')
 ###################### Test remove_items function #####################
-warehouse = Warehouse()
+warehouse = Warehouse(seed,parameter)
 warehouse.reset()
 pos = warehouse.items[0].get_position
 warehouse.robots[0]._pos = pos
@@ -34,7 +40,7 @@ state = warehouse._get_state()
 assert state[pos[0],pos[1], 0] == 0, 'remove items test: failed'
 print('remove items test: passed')
 ################### Test compute rewards function #####################
-warehouse = Warehouse()
+warehouse = Warehouse(seed,parameter)
 warehouse.reset()
 learning_robot_id = warehouse.learning_robot_id
 pos = warehouse.items[0].get_position
