@@ -89,8 +89,7 @@ class VectorizedEnvironment(object):
         self.obs_dim = (self.parameters["frame_height"],
                                                     self.parameters["frame_width"],
                                                     self.parameters["num_frames"])
-        high = 255* torch.ones(self.obs_dim)
-        low = torch.zeros(self.obs_dim)
+      
         observation_space = spaces.Box(0,255,(self.parameters["frame_height"],
                                                     self.parameters["frame_width"],
                                                     self.parameters["num_frames"]))

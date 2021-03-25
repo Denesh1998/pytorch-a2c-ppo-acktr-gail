@@ -52,6 +52,8 @@ class Warehouse(object):
         self.parameters = parameters
         self.reset()
         self.seed(seed)
+        self.metadata = {'render.modes': []}
+        self.spec = None
     ############################## Override ###############################
 
     def reset(self):
@@ -91,11 +93,13 @@ class Warehouse(object):
         done = (self.max_episode_length <= self.episode_length)
         if self.render_bool:
             self.render(self.render_delay)
-        return obs, reward, done, []
+        return obs, reward, done, {}
 
     @property
     def observation_space(self):
-        return None
+        observation_space = spaces.Box(0,1,(self.parameters['obs_size'],),dtype=int)
+        
+        return observation_space
 
     @property
     def action_space(self):
@@ -109,6 +113,10 @@ class Warehouse(object):
         action_space.n = 4
         return action_space
 
+
+    @property
+    def reward_range(self):
+        return (-float('inf'),float('inf'))
     def render(self, delay=0.0):
         """
         Renders the environment

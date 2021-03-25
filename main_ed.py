@@ -21,11 +21,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from environments.vectorized_environment import VectorizedEnvironment
+from environments.warehouse.warehouse import Warehouse  
+
 import yaml
 from a2c_ppo_acktr import algo, utils
 from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.arguments import get_args
 from a2c_ppo_acktr.envs import make_vec_envs
+from a2c_ppo_acktr.envs import make_env
+
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
@@ -52,11 +56,16 @@ def main():
 
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
+    #args.num_processes = 1
+    args.num_processes = 4 
 
+    print(args.num_processes)
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
-    seed = 0
+    #seed = 0
     #envs = VectorizedEnvironment(read_parameters(file_param),seed)
     #envs = Warehouse(None, read_parameters(file_param))
+    #envs = make_env(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir)
+    args.recurrent_policy = True
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
@@ -104,12 +113,13 @@ def main():
             batch_size=args.gail_batch_size,
             shuffle=True,
             drop_last=drop_last)
-
+        
     rollouts = RolloutStorage(args.num_steps, args.num_processes,
                               envs.observation_space.shape, envs.action_space,
                               actor_critic.recurrent_hidden_state_size)
 
-    obs = torch.from_numpy(envs.reset())
+    obs = envs.reset()
+
     rollouts.obs[0].copy_(obs)
     rollouts.to(device)
 
@@ -129,9 +139,6 @@ def main():
         for step in range(args.num_steps):
             # Sample actions
             with torch.no_grad():
-                print(rollouts.obs[step].shape)
-                print(rollouts.recurrent_hidden_states[step].shape)
-                print(rollouts.masks[step].shape)
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
                     rollouts.obs[step], rollouts.recurrent_hidden_states[step],
                     rollouts.masks[step])

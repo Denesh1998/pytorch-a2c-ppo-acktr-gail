@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import copy
 
 from a2c_ppo_acktr.distributions import Bernoulli, Categorical, DiagGaussian
 from a2c_ppo_acktr.utils import init
@@ -207,6 +208,8 @@ class MLPBase(NNBase):
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
                                constant_(x, 0), np.sqrt(2))
 
+        self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
+            init_(nn.Linear(512, 256)), nn.Tanh())
         self.actor = nn.Sequential(
             init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh(),
             init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh())
@@ -221,9 +224,19 @@ class MLPBase(NNBase):
 
     def forward(self, inputs, rnn_hxs, masks):
         x = inputs
-
+        print(x.shape)
+        xc = copy.deepcopy(x)
+        d = torch.empty_like(xc)
+        dset = (0, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
+           63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
+        for i,j in enumerate(dset):
+            d[:,i] = xc[:,j]
+        
+        x = self.fnn(x)
         if self.is_recurrent:
-            x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
+            d, rnn_hxs = self._forward_gru(d, rnn_hxs, masks)
+        
+        x = torch.cat((x, d),0)   
 
         hidden_critic = self.critic(x)
         hidden_actor = self.actor(x)
