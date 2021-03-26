@@ -24,7 +24,7 @@ def get_args():
     parser.add_argument(
         '--gail-epoch', type=int, default=5, help='gail epochs (default: 5)')
     parser.add_argument(
-        '--lr', type=float, default=7e-4, help='learning rate (default: 7e-4)')
+        '--lr', type=float, default=2.5e-4, help='learning rate (default: 7e-4)')
     parser.add_argument(
         '--eps',
         type=float,
@@ -75,7 +75,8 @@ def get_args():
     parser.add_argument(
         '--num-processes',
         type=int,
-        default=16,
+        # default=16,
+        default=4,
         help='how many training CPU processes to use (default: 16)')
     parser.add_argument(
         '--num-steps',
@@ -115,7 +116,8 @@ def get_args():
     parser.add_argument(
         '--num-env-steps',
         type=int,
-        default=10e6,
+        # default=10e6,
+        default=4e6,
         help='number of environment steps to train (default: 10e6)')
     parser.add_argument(
         '--env-name',
