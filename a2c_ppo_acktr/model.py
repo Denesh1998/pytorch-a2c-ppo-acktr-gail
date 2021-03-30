@@ -207,15 +207,23 @@ class MLPBase(NNBase):
 
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
                                constant_(x, 0), np.sqrt(2))
-
+        self.d_set = (0, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
+            63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
+        self.output_fnn = 256
+        self.output_rnn = 128
+        self.input_ac = self.output_fnn + self.output_rnn
+        
         self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
-            init_(nn.Linear(512, 256)), nn.Tanh())
+            init_(nn.Linear(512, self.output_fnn)), nn.Tanh())
+        self.fnn2 = nn.Sequential(init_(nn.Linear(num_inputs,256)), nn.Tanh(),
+                                  init_(nn.Linear(256, self.output_rnn)),nn.Tanh())
+        
         self.actor = nn.Sequential(
-            init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh(),
+            init_(nn.Linear(self.input_ac, hidden_size)), nn.Tanh(),
             init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh())
 
         self.critic = nn.Sequential(
-            init_(nn.Linear(num_inputs, hidden_size)), nn.Tanh(),
+            init_(nn.Linear(self.input_ac, hidden_size)), nn.Tanh(),
             init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh())
 
         self.critic_linear = init_(nn.Linear(hidden_size, 1))
@@ -224,19 +232,23 @@ class MLPBase(NNBase):
 
     def forward(self, inputs, rnn_hxs, masks):
         x = inputs
-        print(x.shape)
+        # print(x.shape)
         xc = copy.deepcopy(x)
         d = torch.empty_like(xc)
         dset = (0, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
-           63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
+            63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
         for i,j in enumerate(dset):
-            d[:,i] = xc[:,j]
-        
+             d[:,i] = xc[:,j]
+        print(len(self.d_set))
+        print(d.shape)
+        print(x.shape)
         x = self.fnn(x)
+        d = self.fnn2(d)
         if self.is_recurrent:
-            d, rnn_hxs = self._forward_gru(d, rnn_hxs, masks)
+            x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
         
-        x = torch.cat((x, d),0)   
+        # x = torch.cat((x, d),0)
+        x = torch.cat((x, d),1) 
 
         hidden_critic = self.critic(x)
         hidden_actor = self.actor(x)

@@ -37,7 +37,7 @@ def read_parameters(config_file):
     with open(config_file) as file:
         parameters = yaml.load(file, Loader=yaml.FullLoader)
     return parameters['parameters']
-file_param = "/home/denesh/Acads/Q3/DL/influence-aware-memory/configs/default.yaml";
+file_param = "/home/scong/Documents/DL_RP/pytorch-a2c-ppo-acktr-gail/a2c_ppo_acktr/default.yaml";
 
 def main():
     args = get_args()
@@ -56,7 +56,7 @@ def main():
 
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
-    #args.num_processes = 1
+    # args.num_processes = 1
     args.num_processes = 4 
 
     print(args.num_processes)
@@ -65,7 +65,7 @@ def main():
     #envs = VectorizedEnvironment(read_parameters(file_param),seed)
     #envs = Warehouse(None, read_parameters(file_param))
     #envs = make_env(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir)
-    args.recurrent_policy = True
+    # args.recurrent_policy = True
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,

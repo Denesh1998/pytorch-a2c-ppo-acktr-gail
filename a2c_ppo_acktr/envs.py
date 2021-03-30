@@ -22,7 +22,7 @@ from stable_baselines3.common.vec_env import (DummyVecEnv, SubprocVecEnv,
                                               VecEnvWrapper)
 from stable_baselines3.common.vec_env.vec_normalize import \
     VecNormalize as VecNormalize_
-file_param = "/home/denesh/Acads/Q3/DL/influence-aware-memory/configs/default.yaml";
+file_param = "/home/scong/Documents/DL_RP/pytorch-a2c-ppo-acktr-gail/a2c_ppo_acktr/default.yaml";
 
 try:
     import dmc2gym
