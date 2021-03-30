@@ -65,7 +65,7 @@ def main():
     #envs = VectorizedEnvironment(read_parameters(file_param),seed)
     #envs = Warehouse(None, read_parameters(file_param))
     #envs = make_env(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir)
-    # args.recurrent_policy = True
+    args.recurrent_policy = True
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
@@ -117,7 +117,6 @@ def main():
     rollouts = RolloutStorage(args.num_steps, args.num_processes,
                               envs.observation_space.shape, envs.action_space,
                               actor_critic.recurrent_hidden_state_size)
-
     obs = envs.reset()
 
     rollouts.obs[0].copy_(obs)
@@ -139,6 +138,9 @@ def main():
         for step in range(args.num_steps):
             # Sample actions
             with torch.no_grad():
+                # print(rollouts.obs[step].shape)
+                # print(rollouts.recurrent_hidden_states[step].shape)
+                # print(rollouts.masks[step].shape)
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
                     rollouts.obs[step], rollouts.recurrent_hidden_states[step],
                     rollouts.masks[step])

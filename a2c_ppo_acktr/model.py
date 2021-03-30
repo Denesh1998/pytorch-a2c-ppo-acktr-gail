@@ -199,34 +199,39 @@ class CNNBase(NNBase):
 
 
 class MLPBase(NNBase):
-    def __init__(self, num_inputs, recurrent=False, hidden_size=64):
+    def __init__(self, num_inputs, recurrent=False, hidden_size=128):
         super(MLPBase, self).__init__(recurrent, num_inputs, hidden_size)
 
-        if recurrent:
-            num_inputs = hidden_size
+        #if recurrent:
+        #    num_inputs = hidden_size
 
         init_ = lambda m: init(m, nn.init.orthogonal_, lambda x: nn.init.
                                constant_(x, 0), np.sqrt(2))
         self.d_set = (0, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
             63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
+        
         self.output_fnn = 256
         self.output_rnn = 128
         self.input_ac = self.output_fnn + self.output_rnn
         
         self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
-            init_(nn.Linear(512, self.output_fnn)), nn.Tanh())
-        self.fnn2 = nn.Sequential(init_(nn.Linear(num_inputs,256)), nn.Tanh(),
-                                  init_(nn.Linear(256, self.output_rnn)),nn.Tanh())
+                                 init_(nn.Linear(512, 256)), nn.Tanh())
         
+        # self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
+        #     init_(nn.Linear(512, self.output_fnn)), nn.Tanh())
+        # self.fnn2 = nn.Sequential(init_(nn.Linear(num_inputs,256)), nn.Tanh(),
+        #                           init_(nn.Linear(256, self.output_rnn)),nn.Tanh())
+        
+        self.ac_hidden_size = hidden_size
         self.actor = nn.Sequential(
-            init_(nn.Linear(self.input_ac, hidden_size)), nn.Tanh(),
-            init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh())
+            init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
+            init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
 
         self.critic = nn.Sequential(
-            init_(nn.Linear(self.input_ac, hidden_size)), nn.Tanh(),
-            init_(nn.Linear(hidden_size, hidden_size)), nn.Tanh())
+            init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
+            init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
 
-        self.critic_linear = init_(nn.Linear(hidden_size, 1))
+        self.critic_linear = init_(nn.Linear(self.ac_hidden_size, 1))
 
         self.train()
 
@@ -243,13 +248,15 @@ class MLPBase(NNBase):
         # print(d.shape)
         # print(x.shape)
         x = self.fnn(x)
-        d = self.fnn2(d)
+        #d = self.fnn2(d)
         if self.is_recurrent:
-            x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
-        
+            d, rnn_hxs = self._forward_gru(d, rnn_hxs, masks)
+            print("d size",d.size(0))
+            print("hxs size",rnn_hxs.size(0))
         # x = torch.cat((x, d),0)
         x = torch.cat((x, d),1) 
-
+        #print("Shape of x:",x.shape)
+        
         hidden_critic = self.critic(x)
         hidden_actor = self.actor(x)
 
