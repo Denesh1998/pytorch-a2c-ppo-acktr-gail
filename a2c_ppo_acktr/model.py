@@ -239,9 +239,9 @@ class MLPBase(NNBase):
             63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
         for i,j in enumerate(dset):
              d[:,i] = xc[:,j]
-        print(len(self.d_set))
-        print(d.shape)
-        print(x.shape)
+        # print(len(self.d_set))
+        # print(d.shape)
+        # print(x.shape)
         x = self.fnn(x)
         d = self.fnn2(d)
         if self.is_recurrent:

@@ -37,7 +37,7 @@ def read_parameters(config_file):
     with open(config_file) as file:
         parameters = yaml.load(file, Loader=yaml.FullLoader)
     return parameters['parameters']
-file_param = "/home/scong/Documents/DL_RP/pytorch-a2c-ppo-acktr-gail/a2c_ppo_acktr/default.yaml";
+file_param = "configs/default.yaml";
 
 def main():
     args = get_args()
@@ -57,7 +57,7 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
     # args.num_processes = 1
-    args.num_processes = 4 
+    args.num_processes = 4
 
     print(args.num_processes)
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
