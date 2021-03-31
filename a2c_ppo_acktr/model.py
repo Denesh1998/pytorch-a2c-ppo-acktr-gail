@@ -251,8 +251,8 @@ class MLPBase(NNBase):
         #d = self.fnn2(d)
         if self.is_recurrent:
             d, rnn_hxs = self._forward_gru(d, rnn_hxs, masks)
-            print("d size",d.size(0))
-            print("hxs size",rnn_hxs.size(0))
+            # print("d size",d.size(0))
+            # print("hxs size",rnn_hxs.size(0))
         # x = torch.cat((x, d),0)
         x = torch.cat((x, d),1) 
         #print("Shape of x:",x.shape)
