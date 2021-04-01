@@ -70,6 +70,7 @@ class Categorical(nn.Module):
 
     def forward(self, x):
         x = self.linear(x)
+        #print("x has nan:",torch.any(torch.isnan(x)))
         return FixedCategorical(logits=x)
 
 

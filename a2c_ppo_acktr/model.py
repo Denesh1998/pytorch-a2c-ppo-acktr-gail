@@ -53,7 +53,13 @@ class Policy(nn.Module):
         raise NotImplementedError
 
     def act(self, inputs, rnn_hxs, masks, deterministic=False):
+        
         value, actor_features, rnn_hxs = self.base(inputs, rnn_hxs, masks)
+        # print("Input act has nan:",torch.any(torch.isnan(inputs)))
+        # print("rnn_hxs act has nan:",torch.any(torch.isnan(rnn_hxs)))
+        # print("masks act has nan:",torch.any(torch.isnan(masks)))
+        # print("value act has nan:",torch.any(torch.isnan(value)))
+
         dist = self.dist(actor_features)
 
         if deterministic:
@@ -71,9 +77,14 @@ class Policy(nn.Module):
         return value
 
     def evaluate_actions(self, inputs, rnn_hxs, masks, action):
+        
         value, actor_features, rnn_hxs = self.base(inputs, rnn_hxs, masks)
+        # print("rnn_hxs eval has nan:",torch.any(torch.isnan(rnn_hxs)))
+        # print("actor_ft eval has nan:",torch.any(torch.isnan(actor_features)))
+        # print("value eval has nan:",torch.any(torch.isnan(value)))
+        #print("actor_features has nan:",torch.isnan(actor_features).any())
         dist = self.dist(actor_features)
-
+        
         action_log_probs = dist.log_probs(action)
         dist_entropy = dist.entropy().mean()
 
@@ -215,7 +226,7 @@ class MLPBase(NNBase):
         self.input_ac = self.output_fnn + self.output_rnn
         
         self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
-                                 init_(nn.Linear(512, 256)), nn.Tanh())
+                                  init_(nn.Linear(512, 256)), nn.Tanh())
         
         # self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
         #     init_(nn.Linear(512, self.output_fnn)), nn.Tanh())
@@ -239,7 +250,7 @@ class MLPBase(NNBase):
         x = inputs
         # print(x.shape)
         xc = copy.deepcopy(x)
-        d = torch.empty_like(xc)
+        d = torch.zeros_like(xc)
         dset = (0, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
             63, 64, 65, 66, 67, 68, 69, 70, 71, 72)
         for i,j in enumerate(dset):
@@ -248,15 +259,16 @@ class MLPBase(NNBase):
         # print(d.shape)
         # print(x.shape)
         x = self.fnn(x)
-        #d = self.fnn2(d)
+ 
+
         if self.is_recurrent:
             d, rnn_hxs = self._forward_gru(d, rnn_hxs, masks)
             # print("d size",d.size(0))
             # print("hxs size",rnn_hxs.size(0))
-        # x = torch.cat((x, d),0)
+
         x = torch.cat((x, d),1) 
         #print("Shape of x:",x.shape)
-        
+
         hidden_critic = self.critic(x)
         hidden_actor = self.actor(x)
 

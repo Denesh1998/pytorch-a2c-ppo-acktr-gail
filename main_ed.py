@@ -29,6 +29,10 @@ from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.arguments import get_args
 from a2c_ppo_acktr.envs import make_vec_envs
 from a2c_ppo_acktr.envs import make_env
+import torch
+
+from pathlib import Path
+
 
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
@@ -38,14 +42,15 @@ def read_parameters(config_file):
         parameters = yaml.load(file, Loader=yaml.FullLoader)
     return parameters['parameters']
 file_param = "configs/default.yaml";
-rl_mean = []
 rl_std = []
 
 def main():
     args = get_args()
     args.env_name = "warehouse"
     args.algo == 'ppo'
+    args.num_env_steps = 10000
     #args.num_steps = 100
+    #args.seed = seed
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
@@ -130,7 +135,7 @@ def main():
 
     start = time.time()
     count = 0
-    
+    rew  = torch.zeros((4,1))
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
     print(num_updates)
     for j in range(num_updates):
@@ -155,7 +160,8 @@ def main():
             obs, reward, done, infos = envs.step(action)
             #print("done is",done)
             count = count+1
-            #print(count)
+            rew = torch.cat((rew,reward),0)
+           
 
             for info in infos:
                 if 'episode' in info.keys():
@@ -223,8 +229,8 @@ def main():
                         np.median(episode_rewards), np.min(episode_rewards),
                         np.max(episode_rewards), dist_entropy, value_loss,
                         action_loss))
-            rl_mean.append(np.mean(episode_rewards))
-            rl_std.append(np.std(episode_rewards))
+            # rl_mean.append(np.mean(episode_rewards))
+            # rl_std.append(np.std(episode_rewards))
                  
             #dn.append(done)
 
@@ -233,26 +239,32 @@ def main():
             obs_rms = utils.get_vec_normalize(envs).obs_rms
             evaluate(actor_critic, obs_rms, args.env_name, args.seed,
                      args.num_processes, eval_log_dir, device)
+    return rew     
 
 
 if __name__ == "__main__":
-    main()
     
+    rew= main()
+    # path = Path('~/Acads/Q3/DL/pytorch-a2c-ppo-acktr-gail/save_data/').expanduser()
+    # db = {'rl': rew}
+    # torch.save(db, path/'torch_db')
+    # loaded = torch.load(path/'torch_db')
+    # plt.plot(loaded['rl'])   
 
-with open("rewards_avg.txt", "wb") as fp:   #Pickling
-                    pickle.dump(rl_mean, fp)
-with open("rewards_std.txt", "wb") as fp:   #Pickling
-                    pickle.dump(rl_std, fp) 
+# with open("rewards_avg.txt", "wb") as fp:   #Pickling
+#                     pickle.dump(rl_mean, fp)
+# with open("rewards_std.txt", "wb") as fp:   #Pickling
+#                     pickle.dump(rl_std, fp) 
 
-with open("rewards_avg.txt", "rb") as fp:   # Unpickling
-    rl_mean = pickle.load(fp)
+# with open("rewards_avg.txt", "rb") as fp:   # Unpickling
+#     rl_mean = pickle.load(fp)
 
-with open("rewards_std.txt", "rb") as fp:   # Unpickling
-    rl_std = pickle.load(fp)
-rl_mean  = np.array(rl_mean)
-rl_std  = np.array(rl_std)
+# with open("rewards_std.txt", "rb") as fp:   # Unpickling
+#     rl_std = pickle.load(fp)
+# rl_mean  = np.array(rl_mean)
+# rl_std  = np.array(rl_std)
 
-x = np.arange(len(rl_mean))     
-plt.fill_between(x, rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
-plt.plot(rl_mean)   
-plt.show()
+# x = np.arange(len(rl_mean))     
+# plt.fill_between(x, rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
+# plt.plot(rl_mean)   
+# plt.show()

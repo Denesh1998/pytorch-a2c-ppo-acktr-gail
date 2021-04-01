@@ -1,29 +1,56 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Mar 22 21:40:05 2021
+
+@author: denesh
+"""
+
+
 import copy
 import glob
 import os
 import time
 from collections import deque
-
+import pickle
 import gym
+from gym import spaces
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-
+from environments.vectorized_environment import VectorizedEnvironment
+from environments.warehouse.warehouse import Warehouse  
+import matplotlib.pyplot as plt
 import yaml
-
 from a2c_ppo_acktr import algo, utils
 from a2c_ppo_acktr.algo import gail
 from a2c_ppo_acktr.arguments import get_args
 from a2c_ppo_acktr.envs import make_vec_envs
+from a2c_ppo_acktr.envs import make_env
+import torch
+
+from pathlib import Path
+
+
 from a2c_ppo_acktr.model import Policy
 from a2c_ppo_acktr.storage import RolloutStorage
 from evaluation import evaluate
+def read_parameters(config_file):
+    with open(config_file) as file:
+        parameters = yaml.load(file, Loader=yaml.FullLoader)
+    return parameters['parameters']
+file_param = "configs/default.yaml";
+rl_std = []
 
 def main():
     args = get_args()
-
+    args.env_name = "warehouse"
+    args.algo == 'ppo'
+    args.num_env_steps = 250
+    #args.num_steps = 100
+    #args.seed = seed
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
@@ -38,10 +65,16 @@ def main():
 
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
+    # args.num_processes = 1
+    args.num_processes = 1
 
-    envs = make_vec_envs(args.env_name, args.seed, args.num_processes,
-                         args.gamma, args.log_dir, device, False)
-
+    envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
+    #seed = 0
+    #envs = VectorizedEnvironment(read_parameters(file_param),seed)
+    #envs = Warehouse(None, read_parameters(file_param))
+    #envs = make_env(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir)
+    args.recurrent_policy = True
+    print(args.num_steps)
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
@@ -89,7 +122,7 @@ def main():
             batch_size=args.gail_batch_size,
             shuffle=True,
             drop_last=drop_last)
-
+        
     rollouts = RolloutStorage(args.num_steps, args.num_processes,
                               envs.observation_space.shape, envs.action_space,
                               actor_critic.recurrent_hidden_state_size)
@@ -101,8 +134,10 @@ def main():
     episode_rewards = deque(maxlen=10)
 
     start = time.time()
-    num_updates = int(
-        args.num_env_steps) // args.num_steps // args.num_processes
+    count = 0
+    rl_mean  = torch.zeros((4,1))
+    num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
+    print(num_updates)
     for j in range(num_updates):
 
         if args.use_linear_lr_decay:
@@ -114,15 +149,19 @@ def main():
         for step in range(args.num_steps):
             # Sample actions
             with torch.no_grad():
-                print(rollouts.obs[step].shape)
-                print(rollouts.recurrent_hidden_states[step].shape)
-                print(rollouts.masks[step].shape)
+                # print(rollouts.obs[step].shape)
+                # print(rollouts.recurrent_hidden_states[step].shape)
+                # print(rollouts.masks[step].shape)
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
                     rollouts.obs[step], rollouts.recurrent_hidden_states[step],
                     rollouts.masks[step])
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
+            #print("done is",done)
+            count = count+1
+            rl_mean = torch.cat((rl_mean,reward),0)
+            print(reward)
 
             for info in infos:
                 if 'episode' in info.keys():
@@ -190,13 +229,43 @@ def main():
                         np.median(episode_rewards), np.min(episode_rewards),
                         np.max(episode_rewards), dist_entropy, value_loss,
                         action_loss))
+            # rl_mean.append(np.mean(episode_rewards))
+            # rl_std.append(np.std(episode_rewards))
+                 
+            #dn.append(done)
 
         if (args.eval_interval is not None and len(episode_rewards) > 1
                 and j % args.eval_interval == 0):
             obs_rms = utils.get_vec_normalize(envs).obs_rms
             evaluate(actor_critic, obs_rms, args.env_name, args.seed,
                      args.num_processes, eval_log_dir, device)
+    return rl_mean      
 
 
 if __name__ == "__main__":
     main()
+    
+# rl_mean = run(int(0))
+# path = Path('~/Acads/Q3/DL/pytorch-a2c-ppo-acktr-gail/save_data/').expanduser()
+# db = {'rl': rl_mean}
+# torch.save(db, path/'torch_db')
+# loaded = torch.load(path/'torch_db')
+# plt.plot(loaded['rl'])   
+
+# with open("rewards_avg.txt", "wb") as fp:   #Pickling
+#                     pickle.dump(rl_mean, fp)
+# with open("rewards_std.txt", "wb") as fp:   #Pickling
+#                     pickle.dump(rl_std, fp) 
+
+# with open("rewards_avg.txt", "rb") as fp:   # Unpickling
+#     rl_mean = pickle.load(fp)
+
+# with open("rewards_std.txt", "rb") as fp:   # Unpickling
+#     rl_std = pickle.load(fp)
+# rl_mean  = np.array(rl_mean)
+# rl_std  = np.array(rl_std)
+
+# x = np.arange(len(rl_mean))     
+# plt.fill_between(x, rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
+# plt.plot(rl_mean)   
+# plt.show()
