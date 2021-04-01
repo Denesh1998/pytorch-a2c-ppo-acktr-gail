@@ -48,9 +48,9 @@ def main():
     args = get_args()
     args.env_name = "warehouse"
     args.algo == 'ppo'
-    args.num_env_steps = 10000
+    args.num_env_steps = 4e6
     #args.num_steps = 100
-    #args.seed = seed
+    args.seed = 1
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
@@ -66,7 +66,7 @@ def main():
     torch.set_num_threads(1)
     device = torch.device("cuda:0" if args.cuda else "cpu")
     # args.num_processes = 1
-    args.num_processes = 1
+    args.num_processes = 8
 
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
     #seed = 0
@@ -135,7 +135,8 @@ def main():
 
     start = time.time()
     count = 0
-    rew  = torch.zeros((4,1))
+    #rew  = torch.zeros((1,1))
+    rew = []
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
     print(num_updates)
     for j in range(num_updates):
@@ -158,15 +159,17 @@ def main():
 
             # Obser reward and next obs
             obs, reward, done, infos = envs.step(action)
-            #print("done is",done)
+            #print("done is",done,count)
             count = count+1
-            rew = torch.cat((rew,reward),0)
+            
+            #rew = torch.cat((rew,reward),0)
            
 
             for info in infos:
                 if 'episode' in info.keys():
                     episode_rewards.append(info['episode']['r'])
-
+                    #rew = torch.cat((rew,torch.tensor(info['episode']['r'])),0)
+                    rew.append(info['episode']['r'])
             # If done then clean the history of observations.
             masks = torch.FloatTensor(
                 [[0.0] if done_ else [1.0] for done_ in done])
@@ -239,7 +242,7 @@ def main():
             obs_rms = utils.get_vec_normalize(envs).obs_rms
             evaluate(actor_critic, obs_rms, args.env_name, args.seed,
                      args.num_processes, eval_log_dir, device)
-    return rew     
+    return rew    
 
 
 if __name__ == "__main__":
@@ -251,19 +254,12 @@ if __name__ == "__main__":
     # loaded = torch.load(path/'torch_db')
     # plt.plot(loaded['rl'])   
 
-# with open("rewards_avg.txt", "wb") as fp:   #Pickling
-#                     pickle.dump(rl_mean, fp)
-# with open("rewards_std.txt", "wb") as fp:   #Pickling
-#                     pickle.dump(rl_std, fp) 
-
-# with open("rewards_avg.txt", "rb") as fp:   # Unpickling
-#     rl_mean = pickle.load(fp)
-
-# with open("rewards_std.txt", "rb") as fp:   # Unpickling
-#     rl_std = pickle.load(fp)
-# rl_mean  = np.array(rl_mean)
-# rl_std  = np.array(rl_std)
-
+    with open("save_data/rewards_1.txt", "wb") as fp:   #Pickling
+         pickle.dump(rew, fp)
+  
+    
+   
+    
 # x = np.arange(len(rl_mean))     
 # plt.fill_between(x, rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
 # plt.plot(rl_mean)   
