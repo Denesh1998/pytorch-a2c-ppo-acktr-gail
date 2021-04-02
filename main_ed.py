@@ -50,7 +50,7 @@ def main():
     args.algo == 'ppo'
     args.num_env_steps = 4e6
     #args.num_steps = 100
-    args.seed = 1
+    args.seed = 3
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     # loaded = torch.load(path/'torch_db')
     # plt.plot(loaded['rl'])   
 
-    with open("save_data/rewards_1.txt", "wb") as fp:   #Pickling
+    with open("save_data/rewards_3.txt", "wb") as fp:   #Pickling
          pickle.dump(rew, fp)
   
     
