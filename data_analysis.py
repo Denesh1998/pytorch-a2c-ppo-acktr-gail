@@ -26,15 +26,35 @@ def movingaverage (values, window):
 # rl_mean= torch.load(path/'torch_db')
 
 # print(rl_mean['rl'])      
-with open("save_data/rewards_3.txt", "rb") as fp:   # Unpickling
-    rl_mean = pickle.load(fp)
+with open("save_data/GRU/rewards_1_v1.txt", "rb") as fp:   # Unpickling
+    r1 = pickle.load(fp)
+
+with open("save_data/GRU/rewards_2_v1.txt", "rb") as fp:   # Unpickling
+    r2 = pickle.load(fp)
+
+with open("save_data/GRU/rewards_3_v1.txt", "rb") as fp:   # Unpickling
+    r3 = pickle.load(fp)
 
     
-rl_mean  = np.array(rl_mean)
-print(np.shape(rl_mean))
-x= np.arange(100,4000100,100)
-yMA = movingaverage(rl_mean,1000)
+r1  = np.array(r1)
+r2  = np.array(r2)
+r3  = np.array(r3)
+x= np.arange(10100,4000100,100)
+r1MA = movingaverage(r1,1000).reshape(1,-1)
+r2MA = movingaverage(r2,1000).reshape(1,-1)
+r3MA = movingaverage(r3,1000).reshape(1,-1)
+
+r = np.vstack((r1MA, r2MA,r3MA))
+rl_mean =  np.mean(r,axis=0)
+
+rl_std = np.std(r,axis=0)
+
+plt.fill_between(x[len(x)-rl_mean.shape[0]:], rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
+# plt.plot(rl_mean)   
+# plt.show()
 #print yMA
-plt.figure(2)
-plt.plot(x[len(x)-len(yMA):],yMA)
+plt.xlabel("Steps")
+plt.ylabel("Average reward")
+plt.title("GRU Performance on Warehouse")
+plt.plot(x[len(x)-rl_mean.shape[0]:],rl_mean)
 plt.show()

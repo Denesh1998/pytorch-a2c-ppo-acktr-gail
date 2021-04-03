@@ -147,6 +147,11 @@ def get_args():
         default=False,
         help='use a recurrent policy')
     parser.add_argument(
+        '--IAM-policy',
+        action='store_true',
+        default=True,
+        help='use a recurrent policy')
+    parser.add_argument(
         '--use-linear-lr-decay',
         action='store_true',
         default=False,

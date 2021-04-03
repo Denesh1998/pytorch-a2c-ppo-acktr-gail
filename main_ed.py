@@ -67,7 +67,6 @@ def main():
     device = torch.device("cuda:0" if args.cuda else "cpu")
     # args.num_processes = 1
     args.num_processes = 8
-
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
     #seed = 0
     #envs = VectorizedEnvironment(read_parameters(file_param),seed)
@@ -154,7 +153,7 @@ def main():
                 # print(rollouts.recurrent_hidden_states[step].shape)
                 # print(rollouts.masks[step].shape)
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
-                    rollouts.obs[step], rollouts.recurrent_hidden_states[step],
+                    rollouts.obs[step],rollouts.recurrent_hidden_states[step],
                     rollouts.masks[step])
 
             # Obser reward and next obs
@@ -254,7 +253,7 @@ if __name__ == "__main__":
     # loaded = torch.load(path/'torch_db')
     # plt.plot(loaded['rl'])   
 
-    with open("save_data/rewards_3.txt", "wb") as fp:   #Pickling
+    with open("save_data/GRU/rewards_3_v1.txt", "wb") as fp:   #Pickling
          pickle.dump(rew, fp)
   
     
