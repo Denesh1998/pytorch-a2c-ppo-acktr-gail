@@ -49,8 +49,7 @@ def main():
     args.env_name = "warehouse"
     args.algo == 'ppo'
     args.num_env_steps = 4e6
-    #args.num_steps = 100
-    args.seed = 3
+    args.seed = 2
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
@@ -68,12 +67,8 @@ def main():
     # args.num_processes = 1
     args.num_processes = 8
     envs = make_vec_envs(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir, device, False)
-    #seed = 0
-    #envs = VectorizedEnvironment(read_parameters(file_param),seed)
-    #envs = Warehouse(None, read_parameters(file_param))
-    #envs = make_env(args.env_name, args.seed, args.num_processes, args.gamma, args.log_dir)
     args.recurrent_policy = True
-    print(args.num_steps)
+    # print(args.num_steps)
     actor_critic = Policy(
         envs.observation_space.shape,
         envs.action_space,
@@ -134,10 +129,9 @@ def main():
 
     start = time.time()
     count = 0
-    #rew  = torch.zeros((1,1))
     rew = []
     num_updates = int(args.num_env_steps) // args.num_steps // args.num_processes
-    print(num_updates)
+    # print(num_updates)
     for j in range(num_updates):
 
         if args.use_linear_lr_decay:
@@ -149,9 +143,7 @@ def main():
         for step in range(args.num_steps):
             # Sample actions
             with torch.no_grad():
-                # print(rollouts.obs[step].shape)
-                # print(rollouts.recurrent_hidden_states[step].shape)
-                # print(rollouts.masks[step].shape)
+
                 value, action, action_log_prob, recurrent_hidden_states = actor_critic.act(
                     rollouts.obs[step],rollouts.recurrent_hidden_states[step],
                     rollouts.masks[step])
@@ -253,13 +245,5 @@ if __name__ == "__main__":
     # loaded = torch.load(path/'torch_db')
     # plt.plot(loaded['rl'])   
 
-    with open("save_data/GRU/rewards_3_v1.txt", "wb") as fp:   #Pickling
-         pickle.dump(rew, fp)
-  
-    
-   
-    
-# x = np.arange(len(rl_mean))     
-# plt.fill_between(x, rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
-# plt.plot(rl_mean)   
-# plt.show()
+    # with open("save_data/GRU/rewards_3_p1.txt", "wb") as fp:   #Pickling
+    #      pickle.dump(rew, fp)

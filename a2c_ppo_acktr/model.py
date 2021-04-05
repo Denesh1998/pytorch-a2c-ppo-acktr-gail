@@ -29,7 +29,7 @@ class Policy(nn.Module):
         self.K = 25
         #self.base = base(obs_shape[0], **base_kwargs)
         self.base = base(obs_shape[0], **base_kwargs)
-        print(action_space.__class__.__name__)
+        # print(action_space.__class__.__name__)
         if action_space.__class__.__name__ == "Dict" or action_space.__class__.__name__ == "Discrete":
             num_outputs = action_space.n
             self.dist = Categorical(self.base.output_size, num_outputs)
@@ -57,10 +57,6 @@ class Policy(nn.Module):
     def act(self, inputs, rnn_hxs, masks, deterministic=False):
         
         value, actor_features, rnn_hxs = self.base(inputs,rnn_hxs, masks)
-        # print("Input act has nan:",torch.any(torch.isnan(inputs)))
-        # print("rnn_hxs act has nan:",torch.any(torch.isnan(rnn_hxs)))
-        # print("masks act has nan:",torch.any(torch.isnan(masks)))
-        # print("value act has nan:",torch.any(torch.isnan(value)))
 
         dist = self.dist(actor_features)
 
@@ -81,10 +77,6 @@ class Policy(nn.Module):
     def evaluate_actions(self, inputs,rnn_hxs, masks, action):
         
         value, actor_features, rnn_hxs = self.base(inputs,rnn_hxs, masks)
-        # print("rnn_hxs eval has nan:",torch.any(torch.isnan(rnn_hxs)))
-        # print("actor_ft eval has nan:",torch.any(torch.isnan(actor_features)))
-        # print("value eval has nan:",torch.any(torch.isnan(value)))
-        #print("actor_features has nan:",torch.isnan(actor_features).any())
         dist = self.dist(actor_features)
         
         action_log_probs = dist.log_probs(action)
@@ -203,8 +195,8 @@ class CNNBase(NNBase):
         self.train()
 
     def forward(self, inputs, rnn_hxs, masks):
-        print("Problem here")
-        print(inputs.shape)
+        # print("Problem here")
+        # print(inputs.shape)
         x = self.main(inputs / 255.0)
 
         if self.is_recurrent:
@@ -216,7 +208,7 @@ class CNNBase(NNBase):
 class MLPBase(NNBase):
     def __init__(self, num_inputs,recurrent=False, hidden_size=128):
         #super(MLPBase, self).__init__(recurrent, num_inputs, hidden_size)
-        super(MLPBase, self).__init__(recurrent, 640, hidden_size)
+        super(MLPBase, self).__init__(recurrent, 25, hidden_size)
 
         #if recurrent:
         #    num_inputs = hidden_size
@@ -233,23 +225,14 @@ class MLPBase(NNBase):
         #self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
         #                           init_(nn.Linear(512, 256)), nn.Tanh())
         
-        self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 640)), nn.Tanh())
+        # self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 640)), nn.Tanh())
         
-        # self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
-        #     init_(nn.Linear(512, self.output_fnn)), nn.Tanh())
+        self.fnn = nn.Sequential(init_(nn.Linear(num_inputs, 512)), nn.Tanh(),
+            init_(nn.Linear(512, self.output_fnn)), nn.Tanh())
         # self.fnn2 = nn.Sequential(init_(nn.Linear(num_inputs,256)), nn.Tanh(),
         #                           init_(nn.Linear(256, self.output_rnn)),nn.Tanh())
         
         self.ac_hidden_size = hidden_size
-        # self.actor = nn.Sequential(
-        #     init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
-        #     init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
-
-        # self.critic = nn.Sequential(
-        #     init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
-        #     init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
-
-        self.input_ac =  self.output_rnn
         self.actor = nn.Sequential(
             init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
             init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
@@ -258,6 +241,15 @@ class MLPBase(NNBase):
             init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
             init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
 
+        # self.input_ac =  self.output_rnn
+        # self.actor = nn.Sequential(
+        #     init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
+        #     init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
+
+        # self.critic = nn.Sequential(
+        #     init_(nn.Linear(self.input_ac, self.ac_hidden_size)), nn.Tanh(),
+        #     init_(nn.Linear(self.ac_hidden_size, self.ac_hidden_size)), nn.Tanh())
+
         self.critic_linear = init_(nn.Linear(self.ac_hidden_size, 1))
 
         self.train()
@@ -265,22 +257,24 @@ class MLPBase(NNBase):
     def forward(self, inputs,rnn_hxs, masks):
         x = inputs
         # print(x.shape)
-       # xc = copy.deepcopy(x)
+        xc = copy.deepcopy(x)
         d_shape = len(self.d_set)
         d = torch.zeros((x.shape[0],d_shape))
+        # d = torch.zeros_like(xc)
         for i,j in enumerate(self.d_set):
-              d[:,i] = x[:,j]
+              d[:,i] = xc[:,j]
         # print(len(self.d_set))
         # print(x.shape)
         x = self.fnn(x)
  
  
         if self.is_recurrent:
-            x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
+            d, rnn_hxs = self._forward_gru(d, rnn_hxs, masks)
+            # x, rnn_hxs = self._forward_gru(x, rnn_hxs, masks)
             #print("d size",d.shape)
             # print("hxs size",rnn_hxs.size(0))
 
-        #x = torch.cat((x, d),1) 
+        x = torch.cat((x, d),1) 
         #print("Shape of x:",x.shape)
 
         hidden_critic = self.critic(x)

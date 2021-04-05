@@ -27,34 +27,62 @@ def movingaverage (values, window):
 
 # print(rl_mean['rl'])      
 with open("save_data/GRU/rewards_1_v1.txt", "rb") as fp:   # Unpickling
-    r1 = pickle.load(fp)
+    rg1 = pickle.load(fp)
 
 with open("save_data/GRU/rewards_2_v1.txt", "rb") as fp:   # Unpickling
-    r2 = pickle.load(fp)
+    rg2 = pickle.load(fp)
 
 with open("save_data/GRU/rewards_3_v1.txt", "rb") as fp:   # Unpickling
-    r3 = pickle.load(fp)
+    rg3 = pickle.load(fp)
+with open("save_data/GRU/rewards_3_p1.txt", "rb") as fp:   # Unpickling
+    rp3 = pickle.load(fp)
+with open("save_data/IAM/rewards_1_v1.txt", "rb") as fp:   # Unpickling
+    rI1 = pickle.load(fp)
+
+with open("save_data/IAM/rewards_2_v1.txt", "rb") as fp:   # Unpickling
+    rI2 = pickle.load(fp)
+
+with open("save_data/IAM/rewards_3_v1.txt", "rb") as fp:   # Unpickling
+    rI3 = pickle.load(fp)
 
     
-r1  = np.array(r1)
-r2  = np.array(r2)
-r3  = np.array(r3)
+rg1  = np.array(rg1)
+rg2  = np.array(rg2)
+rg3  = np.array(rg3)
+rp3  = np.array(rp3)
+rI1  = np.array(rI1)
+rI2  = np.array(rI2)
+rI3  = np.array(rI3)
 x= np.arange(10100,4000100,100)
-r1MA = movingaverage(r1,1000).reshape(1,-1)
-r2MA = movingaverage(r2,1000).reshape(1,-1)
-r3MA = movingaverage(r3,1000).reshape(1,-1)
+rg1MA = movingaverage(rg1,1000).reshape(1,-1)
+rg2MA = movingaverage(rg2,1000).reshape(1,-1)
+rg3MA = movingaverage(rg3,1000).reshape(1,-1)
+rp3MA = movingaverage(rp3,1000)
+rI1MA = movingaverage(rI1,1000).reshape(1,-1)
+rI2MA = movingaverage(rI2,1000).reshape(1,-1)
+rI3MA = movingaverage(rI3,1000).reshape(1,-1)
 
-r = np.vstack((r1MA, r2MA,r3MA))
-rl_mean =  np.mean(r,axis=0)
+rg = np.vstack((rg1MA, rg2MA,rg3MA))
+rgl_mean =  np.mean(rg,axis=0)
+rgl_std = np.std(rg,axis=0)
 
-rl_std = np.std(r,axis=0)
+rI = np.vstack((rI1MA, rI2MA,rI3MA))
+rIl_mean =  np.mean(rI,axis=0)
+rIl_std = np.std(rI,axis=0)
 
-plt.fill_between(x[len(x)-rl_mean.shape[0]:], rl_mean - rl_std, rl_mean + rl_std, alpha=0.5)  
+
+plt.fill_between(x[len(x)-rIl_mean.shape[0]:], rIl_mean - rIl_std, rIl_mean + rIl_std, alpha=0.5) 
+plt.fill_between(x[len(x)-rgl_mean.shape[0]:], rgl_mean - rgl_std, rgl_mean + rgl_std, alpha=0.5)   
 # plt.plot(rl_mean)   
 # plt.show()
 #print yMA
 plt.xlabel("Steps")
+plt.xlim(0,4e6)
+plt.ylim((26,42))
 plt.ylabel("Average reward")
-plt.title("GRU Performance on Warehouse")
-plt.plot(x[len(x)-rl_mean.shape[0]:],rl_mean)
+plt.title("Average Performance on Warehouse")
+plt.plot(x[len(x)-rIl_mean.shape[0]:],rIl_mean)
+plt.plot(x[len(x)-rgl_mean.shape[0]:],rgl_mean)
+# plt.plot(x[len(x)-rl_mean.shape[0]:],rp3MA)
+plt.legend(('IAM', 'GRU'))
 plt.show()
